@@ -1,0 +1,148 @@
+unit UClasse.BackUp.Restore;
+
+interface
+
+uses
+  System.SysUtils, FireDAC.Stan.Def, FireDAC.Phys.IBWrapper, FireDAC.Phys.FBDef,
+  FireDAC.Phys, FireDAC.Phys.IBBase, FireDAC.Phys.FB, FireDAC.Stan.Intf,
+  FireDAC.UI.Intf,
+  FireDAC.VCLUI.Wait, FireDAC.Comp.UI;
+
+type
+
+  TClasseBackUPAndRestore = class
+  private
+    Fuser_password: string;
+    FlocalBackUpBancoDeDados: string;
+    Fuser_name: string;
+    Fhost: string;
+    FlocalBancoDeDados: string;
+    FDI_Restore: TFDIBBackup;
+    FDI_Backup:TFDIBBackup;
+    FDPhysFBDriverLink1: TFDPhysFBDriverLink;
+    FDGUIxWaitCursor1: TFDGUIxWaitCursor;
+    procedure Sethost(const Value: string);
+    procedure SetlocalBackUpBancoDeDados(const Value: string);
+    procedure SetlocalBancoDeDados(const Value: string);
+    procedure Setuser_name(const Value: string);
+    procedure Setuser_password(const Value: string);
+  public
+
+    procedure iniciarBackUP;
+    procedure iniciarRestore;
+
+    property localBancoDeDados: string read FlocalBancoDeDados
+      write SetlocalBancoDeDados;
+    property localBackUpBancoDeDados: string read FlocalBackUpBancoDeDados
+      write SetlocalBackUpBancoDeDados;
+    property user_name: string read Fuser_name write Setuser_name;
+    property user_password: string read Fuser_password write Setuser_password;
+    property host: string read Fhost write Sethost;
+
+    constructor create;
+    destructor destroy; override;
+  end;
+
+implementation
+
+{ TClasseBackUPAndRestore }
+
+constructor TClasseBackUPAndRestore.create;
+begin
+
+end;
+
+destructor TClasseBackUPAndRestore.destroy;
+begin
+
+  inherited;
+end;
+
+procedure TClasseBackUPAndRestore.iniciarBackUP;
+begin
+  try
+
+    FDIBBackup1.UserName := 'sysdba'; // usuario da base de dados
+    FDIBBackup1.Password := 'masterkey'; // senha da base de dados
+    FDIBBackup1.Host := 'localhost'; // local do servidor da base de dados
+    FDIBBackup1.Protocol := ipTCPIP; // protocolo de conexao com a base de dados
+    FDIBBackup1.Verbose := True; // capturar retorno/saida do servico da base de dados
+    FDIBBackup1.Database := localBd; // local e nome da base de dados
+    FDIBBackup1.BackupFiles.Add(ExtractFilePath(Application.ExeName) +
+      'BackUp\' + 'BackUp_' + dataTexto(date) + horaTexto(time) + '.fbk'); // local e nome do arquivo de backup
+    FDIBBackup1.Backup;
+
+    MessageDlg('Backup realizado com sucesso!', mtInformation, [mbOK], 0);
+
+  except
+    on E: Exception do
+    begin
+      MessageDlg('Erro ao gerar backup!' + sLineBreak + E.Message, mtError, [mbOK], 0);
+    end;
+  end;
+end;
+
+procedure TClasseBackUPAndRestore.iniciarRestore;
+begin
+  try
+
+    if FileExists(localBancoDeDados) then
+    begin
+      DeleteFile(localBancoDeDados);
+    end;
+
+    FDIBRestore.UserName := 'sysdba'; // usuario da base de dados
+    FDIBRestore.Password := 'masterkey'; // senha da base de dados
+    FDIBRestore.host := 'localhost';
+    // 'db_srv_host' local do servidor da base de dados
+    FDIBRestore.Protocol := ipTCPIP;
+    // protocolo de conexao com a base de dados
+    FDIBRestore.Verbose := True;
+    // capturar retorno/saida do servico da base de dados
+    FDIBRestore.Database := edtBancoOriginal.Text;
+    // local e nome da base de dados a ser restaurada
+    FDIBRestore.BackupFiles.Add(edtLocalBackUp.Text); // arquivo de backup
+    FDIBRestore.Restore;
+    FDIBBackup1.BackupFiles.Clear;
+
+    MessageDlg('Restauração do banco de dados realizado com sucesso!',
+      mtInformation, [mbOK], 0);
+
+    HabilitarBotoes();
+  except
+    on E: Exception do
+    begin
+      HabilitarBotoes();
+      MessageDlg('Erro ao gerar restore!' + sLineBreak + E.Message, mtError,
+        [mbOK], 0);
+    end;
+  end;
+end;
+
+procedure TClasseBackUPAndRestore.Sethost(const Value: string);
+begin
+  Fhost := Value;
+end;
+
+procedure TClasseBackUPAndRestore.SetlocalBackUpBancoDeDados
+  (const Value: string);
+begin
+  FlocalBackUpBancoDeDados := Value;
+end;
+
+procedure TClasseBackUPAndRestore.SetlocalBancoDeDados(const Value: string);
+begin
+  FlocalBancoDeDados := Value;
+end;
+
+procedure TClasseBackUPAndRestore.Setuser_name(const Value: string);
+begin
+  Fuser_name := Value;
+end;
+
+procedure TClasseBackUPAndRestore.Setuser_password(const Value: string);
+begin
+  Fuser_password := Value;
+end;
+
+end.
