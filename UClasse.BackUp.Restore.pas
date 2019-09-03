@@ -3,10 +3,11 @@ unit UClasse.BackUp.Restore;
 interface
 
 uses
-  System.SysUtils, FireDAC.Stan.Def, FireDAC.Phys.IBWrapper, FireDAC.Phys.FBDef,
-  FireDAC.Phys, FireDAC.Phys.IBBase, FireDAC.Phys.FB, FireDAC.Stan.Intf,
-  FireDAC.UI.Intf,
-  FireDAC.VCLUI.Wait, FireDAC.Comp.UI, Vcl.Dialogs, Winapi.Windows;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
+  System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, FireDAC.Stan.Def, FireDAC.VCLUI.Wait,
+  FireDAC.Phys.IBWrapper, FireDAC.Stan.Intf, FireDAC.Phys, FireDAC.Phys.IBBase,
+  FireDAC.Phys.FB, FireDAC.Comp.UI;
 
 type
 
@@ -17,15 +18,17 @@ type
     Fuser_name: string;
     Fhost: string;
     FlocalBancoDeDados: string;
-    FDI_Restore: TFDIBBackup;
+    FDI_Restore: TFDIBRestore;
     FDI_Backup: TFDIBBackup;
     FDPhysFBDriverLink1: TFDPhysFBDriverLink;
     FDGUIxWaitCursor1: TFDGUIxWaitCursor;
+    FdataHora: string;
     procedure Sethost(const Value: string);
     procedure SetlocalBackUpBancoDeDados(const Value: string);
     procedure SetlocalBancoDeDados(const Value: string);
     procedure Setuser_name(const Value: string);
     procedure Setuser_password(const Value: string);
+    procedure SetdataHora(const Value: string);
   public
 
     procedure iniciarBackUP;
@@ -38,6 +41,7 @@ type
     property user_name: string read Fuser_name write Setuser_name;
     property user_password: string read Fuser_password write Setuser_password;
     property host: string read Fhost write Sethost;
+    property dataHora: string read FdataHora write SetdataHora;
 
     constructor create;
     destructor destroy; override;
@@ -45,52 +49,61 @@ type
 
 implementation
 
-uses
-  Vcl.Forms;
-
 { TClasseBackUPAndRestore }
 
 constructor TClasseBackUPAndRestore.create;
 begin
 
+  FDPhysFBDriverLink1 := TFDPhysFBDriverLink.create(nil);
+
+  FDPhysFBDriverLink1.VendorLib :=
+    'C:\Users\noels\Documents\GitHub\SmartEstoque\Banco\fbclient.dll';
 end;
 
 destructor TClasseBackUPAndRestore.destroy;
 begin
-
+  // FDPhysFBDriverLink1.Free;
   inherited;
 end;
 
 procedure TClasseBackUPAndRestore.iniciarBackUP;
+var
+  data: string;
+  hora: string;
 begin
- try
- 
-  FDI_Backup := TFDIBBackup.create(nil);
+
+  data := FormatDateTime('ddmmyy', date);
+  hora := FormatDateTime('hhmmss', time);
 
   try
 
-    FDI_Backup.UserName := 'sysdba'; 
-    FDI_Backup.Password := 'masterkey'; 
-    FDI_Backup.host := 'localhost'; 
-    FDI_Backup.Protocol := ipTCPIP; 
-    FDI_Backup.Verbose := True;
-    FDI_Backup.Database := localBancoDeDados;
-    FDI_Backup.BackupFiles.Add(ExtractFilePath(Application.ExeName) + 'BackUp\'
-      + 'BackUp_' + datetostr(date)+timetostr(time) + '.fbk');
-    FDI_Backup.BackUp;
+    FDI_Backup := TFDIBBackup.create(nil);
 
-    MessageDlg('Backup realizado com sucesso!', mtInformation, [mbOK], 0);
+    try
 
-  except
-    on E: Exception do
-    begin
-      MessageDlg('Erro ao gerar backup!' + sLineBreak + E.Message, mtError,
-        [mbOK], 0);
+      FDI_Backup.DriverLink := FDPhysFBDriverLink1;
+      FDI_Backup.UserName := 'sysdba';
+      FDI_Backup.Password := 'masterkey';
+      FDI_Backup.host := 'localhost';
+      FDI_Backup.Protocol := ipTCPIP;
+      FDI_Backup.Verbose := True;
+      FDI_Backup.Database := localBancoDeDados;
+      FDI_Backup.BackupFiles.Add(ExtractFilePath(Application.ExeName) +
+        'BackUp\' + 'BackUp_' + data + hora + '.fbk');
+      FDI_Backup.BackUp;
+
+      MessageDlg('Backup realizado com sucesso!', mtInformation, [mbOK], 0);
+
+    except
+      on E: Exception do
+      begin
+        raise Exception.create('Ocorreu um erro ao tentar realizar o BackUp' +
+          E.Message);
+      end;
     end;
+  finally
+    FDI_Backup.Free;
   end;
- finally
-  FDI_Backup.Free;  
- end;
 
 end;
 
@@ -100,19 +113,17 @@ begin
 
     if FileExists(localBancoDeDados) then
     begin
-//      DeleteFile();
+      DeleteFile(Pchar(localBancoDeDados));
     end;
 
-    FDI_Restore.UserName := 'sysdba'; // usuario da base de dados
-    FDI_Restore.Password := 'masterkey'; // senha da base de dados
+    FDI_Restore := TFDIBRestore.create(nil);
+
+    FDI_Restore.UserName := 'sysdba';
+    FDI_Restore.Password := 'masterkey';
     FDI_Restore.host := 'localhost';
-    // 'db_srv_host' local do servidor da base de dados
     FDI_Restore.Protocol := ipTCPIP;
-    // protocolo de conexao com a base de dados
     FDI_Restore.Verbose := True;
-    // capturar retorno/saida do servico da base de dados
     FDI_Restore.Database := localBancoDeDados;
-    // local e nome da base de dados a ser restaurada
     FDI_Restore.BackupFiles.Add(localBackUpBancoDeDados);
     FDI_Restore.Restore;
     FDI_Restore.BackupFiles.Clear;
@@ -127,6 +138,22 @@ begin
         [mbOK], 0);
     end;
   end;
+
+  FDI_Restore.Free;
+
+end;
+
+procedure TClasseBackUPAndRestore.SetdataHora(const Value: string);
+var
+  data: string;
+  hora: string;
+begin
+
+  data := FormatDateTime('ddmmyy', date);
+  hora := FormatDateTime('hhmmss', time);
+
+  FdataHora := data + hora;
+
 end;
 
 procedure TClasseBackUPAndRestore.Sethost(const Value: string);
