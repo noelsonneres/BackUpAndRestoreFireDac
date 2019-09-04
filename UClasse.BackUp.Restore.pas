@@ -69,7 +69,7 @@ end;
 
 procedure TClasseBackUPAndRestore.eventoBackUP(componete: TMemo);
 begin
-//   componete.Lines.Add(FDI_Backup)
+
 end;
 
 procedure TClasseBackUPAndRestore.iniciarBackUP;
