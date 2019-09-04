@@ -7,7 +7,7 @@ uses
   System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, FireDAC.Stan.Def, FireDAC.VCLUI.Wait,
   FireDAC.Phys.IBWrapper, FireDAC.Stan.Intf, FireDAC.Phys, FireDAC.Phys.IBBase,
-  FireDAC.Phys.FB, FireDAC.Comp.UI;
+  FireDAC.Phys.FB, FireDAC.Comp.UI, Vcl.StdCtrls;
 
 type
 
@@ -33,6 +33,7 @@ type
 
     procedure iniciarBackUP;
     procedure iniciarRestore;
+    procedure eventoBackUP(componete:TMemo);
 
     property localBancoDeDados: string read FlocalBancoDeDados
       write SetlocalBancoDeDados;
@@ -64,6 +65,11 @@ destructor TClasseBackUPAndRestore.destroy;
 begin
   // FDPhysFBDriverLink1.Free;
   inherited;
+end;
+
+procedure TClasseBackUPAndRestore.eventoBackUP(componete: TMemo);
+begin
+//   componete.Lines.Add(FDI_Backup)
 end;
 
 procedure TClasseBackUPAndRestore.iniciarBackUP;
@@ -118,6 +124,7 @@ begin
 
     FDI_Restore := TFDIBRestore.create(nil);
 
+    FDI_Restore.DriverLink := FDPhysFBDriverLink1;
     FDI_Restore.UserName := 'sysdba';
     FDI_Restore.Password := 'masterkey';
     FDI_Restore.host := 'localhost';

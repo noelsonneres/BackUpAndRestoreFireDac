@@ -15,15 +15,21 @@ type
     Label1: TLabel;
     Button1: TButton;
     OpenDialog1: TOpenDialog;
-    Memo1: TMemo;
     Button2: TButton;
     FDPhysFBDriverLink1: TFDPhysFBDriverLink;
     Button3: TButton;
+    Edit2: TEdit;
+    Label2: TLabel;
+    Button4: TButton;
+    Button5: TButton;
+    Memo1: TMemo;
     procedure Button1Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
+    procedure Button4Click(Sender: TObject);
+    procedure Button5Click(Sender: TObject);
   private
     { Private declarations }
     F_BackUpRestore: TClasseBackUPAndRestore;
@@ -61,9 +67,23 @@ begin
 
   data := FormatDateTime('ddmmyy', date);
   hora := FormatDateTime('hhmmss', time);
-  showmessage(data+' '+hora);
+  showmessage(data + ' ' + hora);
 
+end;
 
+procedure TForm1.Button4Click(Sender: TObject);
+begin
+  if OpenDialog1.Execute then
+    Edit2.Text := OpenDialog1.FileName;
+end;
+
+procedure TForm1.Button5Click(Sender: TObject);
+begin
+  F_BackUpRestore.localBackUpBancoDeDados := Edit2.Text;
+  F_BackUpRestore.user_name := 'sysdba';
+  F_BackUpRestore.user_password := 'masterkey';
+  F_BackUpRestore.host := 'localhost';
+  F_BackUpRestore.iniciarRestore;
 end;
 
 procedure TForm1.FormClose(Sender: TObject; var Action: TCloseAction);
